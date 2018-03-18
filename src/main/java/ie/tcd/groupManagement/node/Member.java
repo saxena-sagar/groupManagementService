@@ -3,11 +3,21 @@ package ie.tcd.groupManagement.node;
 import java.net.ServerSocket;
 
 public class Member {
+	
+	public ServerSocket server = null;
+
+	public Member(String id, int port) {
+		try {
+			server = new ServerSocket(port);
+			System.out.println("Starting Member:" + id + " on port number:" + port);
+			
+		}
+	}
 
 	public static void main(String[] args) {
-		private ServerSocket server = null;
+
 		String ipAddress = null;
-		String port = null;
+		int port;
 		String usage = "Please Input" + " [-id identification Code] [-port port Number]";
 		String id = null;
 		for (int i = 0; i < args.length; i++) {
@@ -15,10 +25,11 @@ public class Member {
 				id = args[i + 1];
 				i++;
 			} else if ("-port".equals(args[i])) {
-				port = args[i + 1];
+				port = Integer.parseInt(args[i + 1]);
 				i++;
 			}
 		}
+		new Member(id, port);
 
 	}
 
