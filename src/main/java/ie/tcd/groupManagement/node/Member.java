@@ -7,38 +7,37 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
-public class Member implements Runnable {
+public class Member {
 
 	public ServerSocket server = null;
-	private Thread IncomingConnThread = null;
-	
-	private Handler memberArray[] = new Handler[100];
+	private Thread ListenIncomingMessages = null;
+
+	public Handler memberArray[] = new Handler[100];
 	public int memberCount = 0;
+
+	public String sysId;
+	public int sysport;
 
 	public Member(String id, int port, Integer conn, boolean formGroup) {
 		try {
-			server = new ServerSocket(port);
-			System.out.println("Starting Member:" + id + " on port number:" + port);
-
-			IncomingConnThread = new Thread(this); // starting a thread to accept incoming connections
-			IncomingConnThread.start();
+			sysId = id;
+			sysport = port;
+			//System.out.println("Starting this Member: " + sysId + " on port number: " + sysport);
+			
+			Listener messageListener = new Listener();
+			messageListener.start(id, port, this);
+			
+			///ListenIncomingMessages = new Thread(this); // starting a thread to accept incoming connections
+			///ListenIncomingMessages.start();
 
 			// Connect to mentioned server port to join the group
-			if(conn != null)
-			{
-				Socket memberSocket = new Socket("localhost",conn);
-				DataInputStream dataInput = new DataInputStream(memberSocket.getInputStream());
-				DataOutputStream dataOutput = new DataOutputStream(memberSocket.getOutputStream());
-				
-				BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
-				
-				String outMessage = "CONNECT:"+ conn;
-				String inMessage = null;
-				dataOutput.writeUTF(outMessage);
-				inMessage = dataInput.readUTF();
-				System.out.println(inMessage);
-							
+			if (conn != null) {
+				ConnectToServer(conn, sysport);
+				if (formGroup == true) {
+					// Form a Group
+				}
 			}
 		} catch (Exception ex) {
 
@@ -46,21 +45,53 @@ public class Member implements Runnable {
 	}
 
 	// Server main Thread to accept and complete incoming connection
-	public void run() {
-		while (IncomingConnThread != null) {
+	/*public void run() {
+		while (ListenIncomingMessages != null) {
 			try {
 				System.out.println("Waiting for a client ...");
-				addMember(server.accept());
+
+				Socket socket = server.accept();
+				DataInputStream dataInput = new DataInputStream(socket.getInputStream());
+				BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
+
+				String inMessage = dataInput.readUTF();
+				String[] commands = inMessage.split(",");
+
+				for (String command : commands) {
+					String[] messages = command.split(":");
+
+					if (messages[0] == "ID") {
+						sysId = messages[1];
+					}
+					if (messages[0] == "CONNECT") {
+						System.out.println("HERE for " + messages[1] + " " + memberCount);
+						System.out.println();
+						// ADD socket to handler
+					}
+					if (messages[0] == "LEAVE") {
+						System.out.println("LEAVE for " + messages[1] + " " + memberCount);
+					}
+					if (messages[0] == "HEARTBEAT") {
+						System.out.println("HEARTBEAT for " + messages[1] + " " + memberCount);
+					} else {
+						System.out.println("INVALID MESSAGE");
+					}
+				}
 			} catch (IOException ioe) {
 				System.out.print("Server accept error: " + ioe);
 				// stop();
 			}
 		}
-	}
+	}*/
 
 	private void addMember(Socket socket) {
 		if (memberCount < memberArray.length) {
-			memberArray[memberCount] = new Handler(this, socket);
+			try {
+				memberArray[memberCount] = new Handler(this, socket);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			memberCount++;
 
 		} else {
@@ -68,13 +99,32 @@ public class Member implements Runnable {
 		}
 	}
 
+	public void ConnectToServer(Integer conn, int port) throws UnknownHostException, IOException {
+		Socket memberSocket = new Socket("localhost", conn);
+		DataInputStream dataInput = new DataInputStream(memberSocket.getInputStream());
+		DataOutputStream dataOutput = new DataOutputStream(memberSocket.getOutputStream());
+
+		BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
+
+		String outMessage = "ID:" + sysId + ",CONNECT:" + port;
+		System.out.println("@@@@@@@@@" + outMessage);
+		String inMessage = null;
+		dataOutput.writeUTF(outMessage);
+		inMessage = dataInput.readUTF();
+		System.out.println(inMessage);
+
+		dataInput.close();
+		dataOutput.close();
+
+	}
+
 	public static void main(String[] args) {
 
 		// String ipAddress = null;
 		int port = 8080;
 		Integer conn = 0000; // used to connect to the already up and running node
-		String usage = "Please Input" + " [-id identification Code] [-port port Number]"
-				+ " [-con connect to a port]" + "[-form True/False]";
+		String usage = "Please Input" + " [-id identification Code] [-port port Number]" + " [-con connect to a port]"
+				+ "[-form True/False]";
 		String id = null;
 		boolean formGroup = false;
 
