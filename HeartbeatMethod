@@ -1,0 +1,71 @@
+
+    public void run(){
+    try{
+        //define these lines in a constructor
+        String address="127.0.0.1";
+        int port=46969;
+        int reconnectInterval=15000;
+        int interval=1000;
+        Socket socket;
+        //--- constructor's end
+
+        SocketAddress addr=new InetSocketAddress(address, port);
+        InputStream is=null;
+        OutputStream os=null;
+        ByteBuffer buf=ByteBuffer.allocate(2048);
+// allocates 2048 bytes
+        int beat=0;
+        while(!interrupted()){
+            //if socket is not created then create it
+            //if socket is not connected then connect it
+            if(socket==null || !socket.isConnected()){
+                socket=new Socket();
+                while(!socket.isConnected()){
+                    try{
+                        socket.connect(addr,reconnectInterval);
+                    }catch(IOException e){
+                        Log.d("Log", "Can't connect to socket. Reconnecting...");
+                        socket=new Socket(); //recreate socket (if the connection has failed)
+                        sleep(reconnectInterval); //sleep
+                    }
+                    continue;
+                }
+                try{
+                    is=socket.getInputStream(); //open socket streams
+                    os=socket.getOutputStream();
+                }catch(IOException e){
+                    Log.d("Log","Can't open socket streams - IOException");
+                    interrupt();
+                    break;
+                }
+                Log.d("Log", "Socket connected");
+            }
+
+            while(socket.isConnected()){
+                sleep(interval);
+
+                //send heart beats to socket to check connection
+                beat++;
+                if(beat>30)
+                    try{
+                        os.write(1);
+                    }catch(IOException e){
+                        Log.d("Log", "Can't send heartbeat");
+                        socket=null;
+                        break;
+                    }finally{
+                        beat=0;
+                    }
+
+                //read from socket
+                try{
+                    if(is.available()>0 && buf.remaining()>0){
+                        while(is.available()>0 && buf.remaining()>0)
+                            buf.put((byte) is.read());
+                    }else if(buf.position()>0){
+                        get(extractBytes(buf));
+                        buf.clear();
+                    }else buf.clear();
+                }catch(IOException e){
+                    Log.d("Log", "Can't read from socket - IOException");
+                }
