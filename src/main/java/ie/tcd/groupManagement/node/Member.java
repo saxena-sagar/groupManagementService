@@ -45,6 +45,9 @@ public class Member implements Runnable {
 		}
 	}
 
+	public Member() {
+	}
+
 	// Server main Thread to accept and complete incoming connection
 	public void run() {
 		while (IncomingConnThread != null) {
