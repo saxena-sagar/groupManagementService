@@ -2,10 +2,13 @@ package ie.tcd.groupManagement.node;
 
 import java.io.BufferedReader;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.util.Iterator;
+import java.util.Map;
 
 public class Listener implements Runnable {
 
@@ -17,7 +20,7 @@ public class Listener implements Runnable {
 
 		System.out.println("Starting Listener on Port " + sysPort);
 		this.systemMember = systemMember;
-		
+
 		try {
 			server = new ServerSocket(sysPort);
 
@@ -34,14 +37,15 @@ public class Listener implements Runnable {
 
 	@Override
 	public void run() {
-		String memberId;
+		String memberId = null;
 		while (ListenIncomingMessages != null) {
 			try {
 				System.out.println("Waiting for a client ...");
 
 				Socket socket = server.accept();
 				DataInputStream dataInput = new DataInputStream(socket.getInputStream());
-				//BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
+				// BufferedReader buffReader = new BufferedReader(new
+				// InputStreamReader(System.in));
 
 				String inMessage = dataInput.readUTF();
 				System.out.println(inMessage);
@@ -49,21 +53,33 @@ public class Listener implements Runnable {
 
 				for (String command : commands) {
 					String[] messages = command.split(":");
-					System.out.println(messages[0] + " @@@@@@@@@@@ " + messages[1] +  " @@@ " + messages.length);
+					// System.out.println(messages[0] + " @@@@@@@@@@@ " + messages[1] + " @@@ " +
+					// messages.length);
 
 					if (messages[0].equals("ID")) {
 						memberId = messages[1];
-						System.out.println("Member: " + memberId);
-					}
-					else if (messages[0].equals("CONNECT")) {
+						// System.out.println("Member: " + memberId);
+					} else if (messages[0].equals("CONNECT")) {
 						System.out.println("CONNECT for " + messages[1] + " " + systemMember.memberCount);
-						// Call function to add member port from global, also increase count
-					}
-					else if (messages[0].equals("LEAVE")) {
+						systemMember.memberList.put(memberId, messages[1]);
+
+						// Send a responce to the member ID and Port
+						DataOutputStream dataOutput = new DataOutputStream(socket.getOutputStream());
+						String outMessage = "ID:" + systemMember.sysId + ",CONNECT:" + systemMember.sysport;
+						// System.out.println("@@@@@@@@@ To member after Connect" + outMessage);
+						dataOutput.writeUTF(outMessage);
+
+						Iterator iterator = systemMember.memberList.entrySet().iterator();
+						while (iterator.hasNext()) {
+							Map.Entry mentry = (Map.Entry) iterator.next();
+							System.out.print("key is: " + mentry.getKey() + " & Value is: ");
+							System.out.println(mentry.getValue());
+						}
+
+					} else if (messages[0].equals("LEAVE")) {
 						System.out.println("LEAVE for " + messages[1] + " " + systemMember.memberCount);
 						// Call function to remove member port and id from global, also reduce count
-					}
-					else if (messages[0].equals("HEARTBEAT")) {
+					} else if (messages[0].equals("HEARTBEAT")) {
 						System.out.println("HEARTBEAT for " + messages[1] + " " + systemMember.memberCount);
 						// Call function to increase Timeout for the given member
 					} else {

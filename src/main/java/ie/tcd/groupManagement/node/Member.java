@@ -8,12 +8,16 @@ import java.io.InputStreamReader;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 public class Member {
 
 	public ServerSocket server = null;
 	private Thread ListenIncomingMessages = null;
 
+	HashMap<String, String> memberList = new HashMap<String, String>();
 	public Handler memberArray[] = new Handler[100];
 	public int memberCount = 0;
 
@@ -24,13 +28,9 @@ public class Member {
 		try {
 			sysId = id;
 			sysport = port;
-			//System.out.println("Starting this Member: " + sysId + " on port number: " + sysport);
-			
+
 			Listener messageListener = new Listener();
 			messageListener.start(id, port, this);
-			
-			///ListenIncomingMessages = new Thread(this); // starting a thread to accept incoming connections
-			///ListenIncomingMessages.start();
 
 			// Connect to mentioned server port to join the group
 			if (conn != null) {
@@ -43,46 +43,6 @@ public class Member {
 
 		}
 	}
-
-	// Server main Thread to accept and complete incoming connection
-	/*public void run() {
-		while (ListenIncomingMessages != null) {
-			try {
-				System.out.println("Waiting for a client ...");
-
-				Socket socket = server.accept();
-				DataInputStream dataInput = new DataInputStream(socket.getInputStream());
-				BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
-
-				String inMessage = dataInput.readUTF();
-				String[] commands = inMessage.split(",");
-
-				for (String command : commands) {
-					String[] messages = command.split(":");
-
-					if (messages[0] == "ID") {
-						sysId = messages[1];
-					}
-					if (messages[0] == "CONNECT") {
-						System.out.println("HERE for " + messages[1] + " " + memberCount);
-						System.out.println();
-						// ADD socket to handler
-					}
-					if (messages[0] == "LEAVE") {
-						System.out.println("LEAVE for " + messages[1] + " " + memberCount);
-					}
-					if (messages[0] == "HEARTBEAT") {
-						System.out.println("HEARTBEAT for " + messages[1] + " " + memberCount);
-					} else {
-						System.out.println("INVALID MESSAGE");
-					}
-				}
-			} catch (IOException ioe) {
-				System.out.print("Server accept error: " + ioe);
-				// stop();
-			}
-		}
-	}*/
 
 	private void addMember(Socket socket) {
 		if (memberCount < memberArray.length) {
@@ -101,21 +61,48 @@ public class Member {
 
 	public void ConnectToServer(Integer conn, int port) throws UnknownHostException, IOException {
 		Socket memberSocket = new Socket("localhost", conn);
-		DataInputStream dataInput = new DataInputStream(memberSocket.getInputStream());
+
+		// Send Connection message
 		DataOutputStream dataOutput = new DataOutputStream(memberSocket.getOutputStream());
-
-		BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
-
 		String outMessage = "ID:" + sysId + ",CONNECT:" + port;
-		System.out.println("@@@@@@@@@" + outMessage);
-		String inMessage = null;
+		//System.out.println("@@@@@@@@@" + outMessage);
 		dataOutput.writeUTF(outMessage);
+
+		// Read Response
+		String inMessage = null;
+		DataInputStream dataInput = new DataInputStream(memberSocket.getInputStream());
+		BufferedReader buffReader = new BufferedReader(new InputStreamReader(System.in));
 		inMessage = dataInput.readUTF();
-		System.out.println(inMessage);
+		//System.out.println("@@@@@@@@@" + inMessage);
 
 		dataInput.close();
 		dataOutput.close();
+		memberSocket.close();
 
+		// Parse inMessage and add ID an Port to HashMap
+
+		String[] commands = inMessage.split(",");
+		String memberId = null;
+		for (String command : commands) {
+			String[] messages = command.split(":");
+			//System.out.println(messages[0] + " @@@@@@@@@@@ " + messages[1] + " @@@ " + messages.length);
+
+			if (messages[0].equals("ID")) {
+				memberId = messages[1];
+				System.out.println("Member: " + memberId);
+			} else if (messages[0].equals("CONNECT")) {
+				memberList.put(memberId, messages[1]);
+				memberCount++;
+				System.out.println("CONNECT for " + messages[1] + " " + memberCount);
+			}
+		}
+
+		Iterator iterator = memberList.entrySet().iterator();
+		while (iterator.hasNext()) {
+			Map.Entry mentry = (Map.Entry) iterator.next();
+			System.out.print("key is: " + mentry.getKey() + " & Value is: ");
+			System.out.println(mentry.getValue());
+		}
 	}
 
 	public static void main(String[] args) {
