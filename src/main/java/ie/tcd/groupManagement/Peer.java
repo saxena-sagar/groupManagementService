@@ -77,14 +77,16 @@ public class Peer {
 			InetAddress group = InetAddress.getByName("226.4.5.6");
 			
 
-			// Listener messageListener = new Listener();
-			// messageListener.start(id, port, this);
-			ReadThread rt = new ReadThread(group, multcastPort,groupTable);
-			rt.start();
-
 			// giving process id as the identifier
 			String processId = args[0];
 			//String message = args[1];
+			
+			// Listener messageListener = new Listener();
+			// messageListener.start(id, port, this);
+			ReadThread rt = new ReadThread(group, multcastPort,groupTable,processId);
+			rt.start();
+
+			
 			
 			// Accepting message
 			// TODO to accept heartbeat managemnet group list
@@ -94,10 +96,10 @@ public class Peer {
 			shb.start();
 			
 			int Counter = 0;
-//			MulticastSocket testSocket = new MulticastSocket(multcastPort);
-//			String heartbeatMessage = "ID:" + processId + ",BeatCounter:" + Counter; 
-//			DatagramPacket packet = new DatagramPacket(heartbeatMessage.getBytes(), heartbeatMessage.length(), group, multcastPort);
-//			testSocket.send(packet);
+			MulticastSocket testSocket = new MulticastSocket(multcastPort);
+			String heartbeatMessage = "ID:" + processId + ",BeatCounter:" + Counter; 
+			DatagramPacket packet = new DatagramPacket(heartbeatMessage.getBytes(), heartbeatMessage.length(), group, multcastPort);
+			testSocket.send(packet);
 
 		} catch (Exception e) {
 			e.printStackTrace();

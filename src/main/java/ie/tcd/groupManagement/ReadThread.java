@@ -16,12 +16,14 @@ public class ReadThread extends Thread {
 	// Setting size for maximum message length to be multicasted across
 	int MAX_MSG_LEN = 100;
 	Hashtable<String,Integer> groupTable = new Hashtable<String,Integer> ();
+	String selfprocessId = null;
 
-	ReadThread(InetAddress g, int port,Hashtable<String,Integer> grouptable) {
+	ReadThread(InetAddress g, int port,Hashtable<String,Integer> grouptable,String pid) {
 
 		group = g;
 		multcastPort = port;
 		groupTable = grouptable;
+		selfprocessId = pid;
 	}
 
 	public void run() {
@@ -63,14 +65,22 @@ public class ReadThread extends Thread {
 					} else if (messages[0].equals("BeatCounter")) {
 						// memberList.put(memberId, messages[1]);
 						// memberCount++;
-						// System.out.println("CONNECT for " + messages[1] + " " + memberCount);
-						heartbeatCounter = Integer.parseInt(messages[1]);
+						//System.out.println("Message[1] = " + messages[1].getClass());
+						try {
+								heartbeatCounter = Integer.parseInt(messages[1].trim());
+						}catch(NumberFormatException e) {
+							e.printStackTrace();
+						}
+						System.out.println("heartbeatCounter =  " + heartbeatCounter);
 					} /*else if (messages[0].equals("logicalTime")) {
 
 						localLogicalTimeCounter = Integer.parseInt(messages[1]);
 
 					}*/
-					groupTable.put(processid, heartbeatCounter);
+					if(processid != selfprocessId) {
+						groupTable.put(processid, heartbeatCounter);
+					}
+					
 					System.out.println("Group Table: " + groupTable);
 
 				}
