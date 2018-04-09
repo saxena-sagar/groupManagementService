@@ -73,7 +73,7 @@ public class ReadThread extends Thread {
 						SimpleDateFormat sdfTime = new SimpleDateFormat("HHmmss");
 					    Date now = new Date();
 						groupTimer.put(NodeId, Integer.parseInt(sdfTime.format(now)));
-						System.out.println(groupTable);
+						System.out.println("From Network: "+ multicastPort + ", " + groupTable);
 						// System.out.println("From " + NodeId + " counter " + heartbeatCounter);
 					} 
 					// For 'Leaving the Group' messages
