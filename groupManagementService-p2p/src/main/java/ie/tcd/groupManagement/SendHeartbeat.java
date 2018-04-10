@@ -11,7 +11,7 @@ public class SendHeartbeat extends Thread {
 
 	InetAddress group;
 	String multicastPort;
-	int heartbeatCounter = 0;
+	int heartbeatCounter = 1;
 	String MyID = null;
 	Hashtable<String,Integer> groupTable = new Hashtable<String,Integer>();
 	

@@ -7,8 +7,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Hashtable;
 
-import org.joda.time.DateTime;
-
 public class ReadThread extends Thread {
 
 	//To keep a track of the members in the group
@@ -68,13 +66,29 @@ public class ReadThread extends Thread {
 					else if (!(NodeId.equals(MyID)) && messages[0].equals("BeatCounter")) {
 						// call table updater with clock updater
 						heartbeatCounter = Integer.parseInt(messages[1].trim());
-						groupTable.put(NodeId, heartbeatCounter);
 						
-						SimpleDateFormat sdfTime = new SimpleDateFormat("HHmmss");
-					    Date now = new Date();
-						groupTimer.put(NodeId, Integer.parseInt(sdfTime.format(now)));
-						System.out.println("From Network: "+ multicastPort + ", " + groupTable);
-						// System.out.println("From " + NodeId + " counter " + heartbeatCounter);
+						if(!groupTable.containsKey(NodeId))
+						{
+							groupTable.put(NodeId, heartbeatCounter);
+							SimpleDateFormat sdfTime = new SimpleDateFormat("HHmmss");
+						    Date now = new Date();
+							groupTimer.put(NodeId, Integer.parseInt(sdfTime.format(now)));
+							System.out.println("From Network: "+ multicastPort + ", " + groupTable);
+						}
+						else
+						{		
+							Integer previousHeartBeat = groupTable.get(NodeId);
+							if(heartbeatCounter >= previousHeartBeat)
+							{
+								groupTable.put(NodeId, heartbeatCounter);
+								SimpleDateFormat sdfTime = new SimpleDateFormat("HHmmss");
+							    Date now = new Date();
+								groupTimer.put(NodeId, Integer.parseInt(sdfTime.format(now)));
+								System.out.println("From Network: "+ multicastPort + ", " + groupTable);
+							}	
+						}
+						
+						
 					} 
 					// For 'Leaving the Group' messages
 					else if (!(NodeId.equals(MyID)) && messages[0].equals("LeaveGroup")) {
